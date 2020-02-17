@@ -16,6 +16,7 @@ import javax.persistence.Table;
 @Where(clause = "isDeleted = 0")
 public class Commit extends BaseEntity {
 
+  //变更集合. JSON格式化
   @Lob
   @Column(name = "ChangeSets", nullable = false)
   private String changeSets;

@@ -26,6 +26,7 @@ import java.util.Map;
 
 
 /**
+ * 如果是一个回滚操作 则解锁namespace 
  * unlock namespace if is redo operation.
  * --------------------------------------------
  * For example: If namespace has a item K1 = v1
@@ -58,7 +59,7 @@ public class NamespaceUnlockAspect {
     this.bizConfig = bizConfig;
   }
 
-
+  //AOP 符合PreAcquireNamespaceLock注解 且 函数参数类型匹配的函数执行完毕后 触发如下Advice
   //create item
   @After("@annotation(PreAcquireNamespaceLock) && args(appId, clusterName, namespaceName, item, ..)")
   public void requireLockAdvice(String appId, String clusterName, String namespaceName,
@@ -95,20 +96,23 @@ public class NamespaceUnlockAspect {
       return;
     }
 
-    if (!isModified(namespace)) {
+    if (!isModified(namespace)) {//如果没有改动则
       namespaceLockService.unlock(namespace.getId());
     }
 
   }
 
   boolean isModified(Namespace namespace) {
+    //1. 获得当前Namespace的最近的有效Release对象
     Release release = releaseService.findLatestActiveRelease(namespace);
+    //2. 获得当前Namespace的Items
     List<Item> items = itemService.findItemsWithoutOrdered(namespace.getId());
-
+    //3. 如果无 Release 对象，判断是否有普通的 Item 配置项。若有，则代表修改过。
+    // 就是说发布出去的[release]和还未发布的[item] 是否都为空. 否?则说明改过.
     if (release == null) {
       return hasNormalItems(items);
     }
-
+    //4. 比较
     Map<String, String> releasedConfiguration = gson.fromJson(release.getConfigurations(), GsonType.CONFIG);
     Map<String, String> configurationFromItems = generateConfigurationFromItems(namespace, items);
 
@@ -131,12 +135,14 @@ public class NamespaceUnlockAspect {
   private Map<String, String> generateConfigurationFromItems(Namespace namespace, List<Item> namespaceItems) {
 
     Map<String, String> configurationFromItems = Maps.newHashMap();
-
+    //获得父 Namespace
     Namespace parentNamespace = namespaceService.findParentNamespace(namespace);
     //parent namespace
     if (parentNamespace == null) {
+      //如无父 Namespace,使用自己配置
       generateMapFromItems(namespaceItems, configurationFromItems);
     } else {//child namespace
+      //若有父 Namespace ，说明是灰度发布，合并父 Namespace 的配置 + 自己的配置项
       Release parentRelease = releaseService.findLatestActiveRelease(parentNamespace);
       if (parentRelease != null) {
         configurationFromItems = gson.fromJson(parentRelease.getConfigurations(), GsonType.CONFIG);
@@ -153,6 +159,7 @@ public class NamespaceUnlockAspect {
       if (StringUtils.isBlank(key)) {
         continue;
       }
+      //把父namespace的配置里面的item 替换成子Namespace的item
       configurationFromItems.put(key, item.getValue());
     }
 

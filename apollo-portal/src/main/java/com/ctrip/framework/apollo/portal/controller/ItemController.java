@@ -71,8 +71,10 @@ public class ItemController {
   public ItemDTO createItem(@PathVariable String appId, @PathVariable String env,
                             @PathVariable String clusterName, @PathVariable String namespaceName,
                             @RequestBody ItemDTO item) {
+    //1. 检查model
     checkModel(isValidItem(item));
 
+    //2. 设置默认值
     //protect
     item.setLineNum(0);
     item.setId(0);
@@ -81,7 +83,7 @@ public class ItemController {
     item.setDataChangeLastModifiedBy(userId);
     item.setDataChangeCreatedTime(null);
     item.setDataChangeLastModifiedTime(null);
-
+    //3. 调用service层
     return configService.createItem(appId, Env.valueOf(env), clusterName, namespaceName, item);
   }
 

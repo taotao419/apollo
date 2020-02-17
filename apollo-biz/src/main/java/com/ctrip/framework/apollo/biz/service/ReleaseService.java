@@ -168,6 +168,7 @@ public class ReleaseService {
   public Release publish(Namespace namespace, String releaseName, String releaseComment,
                          String operator, boolean isEmergencyPublish) {
 
+    //1. 判断发布人和配置创建人是不是同一个人,是?则抛错
     checkLock(namespace, isEmergencyPublish, operator);
 
     Map<String, String> operateNamespaceItems = getNamespaceItems(namespace);
@@ -415,7 +416,7 @@ public class ReleaseService {
     release.setNamespaceName(namespace.getNamespaceName());
     release.setConfigurations(gson.toJson(configurations));
     release = releaseRepository.save(release);
-
+    // Namespace解锁
     namespaceLockService.unlock(namespace.getId());
     auditService.audit(Release.class.getSimpleName(), release.getId(), Audit.OP.INSERT,
                        release.getDataChangeCreatedBy());

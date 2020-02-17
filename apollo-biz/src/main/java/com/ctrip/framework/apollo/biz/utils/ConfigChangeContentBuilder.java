@@ -43,10 +43,16 @@ public class ConfigChangeContentBuilder {
     return this;
   }
 
+  /**
+   * 判断是否有变化
+   */
   public boolean hasContent(){
     return !createItems.isEmpty() || !updateItems.isEmpty() || !deleteItems.isEmpty();
   }
 
+  /**
+   * 构建变化的JSON字符串
+   */
   public String build() {
     //因为事务第一段提交并没有更新时间,所以build时统一更新
     Date now = new Date();

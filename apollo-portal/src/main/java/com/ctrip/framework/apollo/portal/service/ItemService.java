@@ -56,6 +56,7 @@ public class ItemService {
    * @return parse result
    */
   public void updateConfigItemByText(NamespaceTextModel model) {
+    //1. 抽离参数
     String appId = model.getAppId();
     Env env = model.getEnv();
     String clusterName = model.getClusterName();
@@ -65,16 +66,18 @@ public class ItemService {
 
     ConfigTextResolver resolver =
         model.getFormat() == ConfigFileFormat.Properties ? propertyResolver : fileTextResolver;
-
+    //2. 获得item变化集
     ItemChangeSets changeSets = resolver.resolve(namespaceId, configText,
         itemAPI.findItems(appId, env, clusterName, namespaceName));
     if (changeSets.isEmpty()) {
-      return;
+      return;//防御代码 判断可能没有变化
     }
-
+    //3. 公共字段赋值
     changeSets.setDataChangeLastModifiedBy(userInfoHolder.getUser().getUserId());
+    //4. call对应环境的http API 更新item
     updateItems(appId, env, clusterName, namespaceName, changeSets);
 
+    //5. 日志
     Tracer.logEvent(TracerEventType.MODIFY_NAMESPACE_BY_TEXT,
         String.format("%s+%s+%s+%s", appId, env, clusterName, namespaceName));
     Tracer.logEvent(TracerEventType.MODIFY_NAMESPACE, String.format("%s+%s+%s+%s", appId, env, clusterName, namespaceName));
@@ -86,13 +89,16 @@ public class ItemService {
 
 
   public ItemDTO createItem(String appId, Env env, String clusterName, String namespaceName, ItemDTO item) {
+    //1. 防御代码 判断Namespace是否存在
     NamespaceDTO namespace = namespaceAPI.loadNamespace(appId, env, clusterName, namespaceName);
     if (namespace == null) {
       throw new BadRequestException(
           "namespace:" + namespaceName + " not exist in env:" + env + ", cluster:" + clusterName);
     }
+    //2. namespaceId赋值
     item.setNamespaceId(namespace.getId());
 
+    //3. 调用AdminService API 创建
     ItemDTO itemDTO = itemAPI.createItem(appId, env, clusterName, namespaceName, item);
     Tracer.logEvent(TracerEventType.MODIFY_NAMESPACE, String.format("%s+%s+%s+%s", appId, env, clusterName, namespaceName));
     return itemDTO;

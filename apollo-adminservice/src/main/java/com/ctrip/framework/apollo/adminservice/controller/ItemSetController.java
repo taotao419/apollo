@@ -24,6 +24,7 @@ public class ItemSetController {
   public ResponseEntity<Void> create(@PathVariable String appId, @PathVariable String clusterName,
                                      @PathVariable String namespaceName, @RequestBody ItemChangeSets changeSet) {
 
+    //1. 调用service层函数
     itemSetService.updateSet(appId, clusterName, namespaceName, changeSet);
 
     return ResponseEntity.status(HttpStatus.OK).build();

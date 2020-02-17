@@ -121,36 +121,43 @@ public class NamespaceController {
     return namespaceService.findPublicNamespaceForAssociatedNamespace(Env.valueOf(env), appId, clusterName, namespaceName);
   }
 
+  /**
+   * 
+   * @param appId
+   * @param models NamespaceCreationModel 包含env和Namespace
+   * @return
+   */
   @PreAuthorize(value = "@permissionValidator.hasCreateNamespacePermission(#appId)")
   @PostMapping("/apps/{appId}/namespaces")
   public ResponseEntity<Void> createNamespace(@PathVariable String appId,
                                               @RequestBody List<NamespaceCreationModel> models) {
-
+    //1. 校检models                                                
     checkModel(!CollectionUtils.isEmpty(models));
-
+    //2. 初始化Namespace的用户权限
     String namespaceName = models.get(0).getNamespace().getNamespaceName();
     String operator = userInfoHolder.getUser().getUserId();
 
     roleInitializationService.initNamespaceRoles(appId, namespaceName, operator);
     roleInitializationService.initNamespaceEnvRoles(appId, namespaceName, operator);
-
+    
     for (NamespaceCreationModel model : models) {
       NamespaceDTO namespace = model.getNamespace();
       RequestPrecondition.checkArgumentsNotEmpty(model.getEnv(), namespace.getAppId(),
                                                  namespace.getClusterName(), namespace.getNamespaceName());
-
+      //3. 调用Admin Service的API ,创建并保存Namespace到各自的环境端数据库
       try {
         namespaceService.createNamespace(Env.valueOf(model.getEnv()), namespace);
       } catch (Exception e) {
+      //4. 如果有哪个环境调用失败 仅打印异常日志.并依然提示创建成功[值得商榷]
         logger.error("create namespace fail.", e);
         Tracer.logError(
                 String.format("create namespace fail. (env=%s namespace=%s)", model.getEnv(),
                         namespace.getNamespaceName()), e);
       }
     }
-
+    //5. 对应第二步,授权Namespace Role
     namespaceService.assignNamespaceRoleToOperator(appId, namespaceName,userInfoHolder.getUser().getUserId());
-
+    //6. 返回
     return ResponseEntity.ok().build();
   }
 

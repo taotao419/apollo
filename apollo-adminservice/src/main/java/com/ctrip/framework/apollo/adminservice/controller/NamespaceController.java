@@ -31,12 +31,14 @@ public class NamespaceController {
   public NamespaceDTO create(@PathVariable("appId") String appId,
                              @PathVariable("clusterName") String clusterName,
                              @Valid @RequestBody NamespaceDTO dto) {
+    //1. API接口对象格式转换
     Namespace entity = BeanUtils.transform(Namespace.class, dto);
     Namespace managedEntity = namespaceService.findOne(appId, clusterName, entity.getNamespaceName());
+    //2. 防御代码 判断是否已经存在
     if (managedEntity != null) {
       throw new BadRequestException("namespace already exist.");
     }
-
+    //3. 调用service层 保存数据
     entity = namespaceService.save(entity);
 
     return BeanUtils.transform(NamespaceDTO.class, entity);

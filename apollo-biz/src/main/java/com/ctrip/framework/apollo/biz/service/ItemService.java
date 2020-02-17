@@ -128,19 +128,20 @@ public class ItemService {
 
   @Transactional
   public Item save(Item entity) {
+    //1. 校检key/value 长度
     checkItemKeyLength(entity.getKey());
     checkItemValueLength(entity.getNamespaceId(), entity.getValue());
 
     entity.setId(0);//protection
-
+    //2. 赋值lineNum
     if (entity.getLineNum() == 0) {
       Item lastItem = findLastOne(entity.getNamespaceId());
       int lineNum = lastItem == null ? 1 : lastItem.getLineNum() + 1;
       entity.setLineNum(lineNum);
     }
-
+    //3. repo层保存
     Item item = itemRepository.save(entity);
-
+    //4. audit 审核
     auditService.audit(Item.class.getSimpleName(), item.getId(), Audit.OP.INSERT,
                        item.getDataChangeCreatedBy());
 

@@ -77,12 +77,14 @@ public class NamespaceService {
 
 
   public NamespaceDTO createNamespace(Env env, NamespaceDTO namespace) {
+    //1. 赋默认值 createdBy & lastModifiedBy
     if (StringUtils.isEmpty(namespace.getDataChangeCreatedBy())) {
       namespace.setDataChangeCreatedBy(userInfoHolder.getUser().getUserId());
     }
     namespace.setDataChangeLastModifiedBy(userInfoHolder.getUser().getUserId());
+    //2. call admin service API
     NamespaceDTO createdNamespace = namespaceAPI.createNamespace(env, namespace);
-
+    //3. 记日志
     Tracer.logEvent(TracerEventType.CREATE_NAMESPACE,
         String.format("%s+%s+%s+%s", namespace.getAppId(), env, namespace.getClusterName(),
             namespace.getNamespaceName()));

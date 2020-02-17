@@ -19,6 +19,10 @@ public class Item extends BaseEntity {
   @Column(name = "NamespaceId", nullable = false)
   private long namespaceId;
 
+  /**
+   * 对于 properties, item的key 对应每条配置项的键
+   * 对于yaml等待, item的key = content ,对应整个配置文件.
+   */
   @Column(name = "key", nullable = false)
   private String key;
 
@@ -29,6 +33,7 @@ public class Item extends BaseEntity {
   @Column(name = "comment")
   private String comment;
 
+  //行号, 从一开始. 主要用于properties类型的配置文件.
   @Column(name = "LineNum")
   private Integer lineNum;
 

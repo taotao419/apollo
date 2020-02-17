@@ -1,0 +1,13 @@
+有一点需要补充，公用类型和关联类型的判定，差异点仅仅是 Namespace 和 其对应的 AppNamespace 的 appId 是否一致。
+
+若一致，就是公用类型。
+若不同，就是关联类型。
+着意味着什么？如果我们在一个应用下给的 Cluster A 和 B 创建了一个名为 ns 的公用类型的 AppNamespace ，那么在 Cluster A 和 B 都会生成对应的 Namespace 。
+如果此处删除了 B 的 Namespace ，则在 B 下面就不存在该 Namespace 。
+如果我们再通过关联的方式，添加了 ns ，生成的 Namespace 是 公用类型，而不是关联类型。
+
+一定要注意！！！
+
+
+App <--1:N--> AppNamespace <--1:N--> Namespace 
+其中Namespace 包含 appId+Cluster+Namespace Name

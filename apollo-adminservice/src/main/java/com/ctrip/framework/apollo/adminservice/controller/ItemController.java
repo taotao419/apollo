@@ -41,8 +41,10 @@ public class ItemController {
   public ItemDTO create(@PathVariable("appId") String appId,
                         @PathVariable("clusterName") String clusterName,
                         @PathVariable("namespaceName") String namespaceName, @RequestBody ItemDTO dto) {
+    //1. ItemDTO转换成Item对象
     Item entity = BeanUtils.transform(Item.class, dto);
 
+    //2. 保存到ItemService
     ConfigChangeContentBuilder builder = new ConfigChangeContentBuilder();
     Item managedEntity = itemService.findOne(appId, clusterName, namespaceName, entity.getKey());
     if (managedEntity != null) {
@@ -53,6 +55,7 @@ public class ItemController {
     }
     dto = BeanUtils.transform(ItemDTO.class, entity);
 
+    //3. 创建commit对象 并保存其第一个版本
     Commit commit = new Commit();
     commit.setAppId(appId);
     commit.setClusterName(clusterName);
